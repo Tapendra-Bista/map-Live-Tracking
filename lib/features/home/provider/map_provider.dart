@@ -28,6 +28,9 @@ final autoCompleteResultsProvider = FutureProvider<List<dynamic>>((ref) async {
 
 // map screen providers
 
+// location permission granted provider
+final locationPermissionGrantedProvider = StateProvider<bool>((ref) => false);
+
 // current location provider
 final locationProvider = Provider((ref) => LocationService());
 
@@ -44,8 +47,6 @@ final mapTypeProvider = StateProvider<MapType>((ref) => MapType.normal);
 
 // markers provider
 final markersProvider = StateProvider<Set<Marker>>((ref) => {});
-
-
 
 //  source Location
 final sourceLocationProvider = StateProvider<LatLng?>((ref) => null);

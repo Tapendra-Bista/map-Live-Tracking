@@ -29,7 +29,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final mapType = ref.watch(mapTypeProvider);
     ref.watch(currentLocationProvider);
     final markers = ref.watch(markersProvider);
-   
     final polylines = ref.watch(polylinePointsProvider);
     final showBottomSheet = ref.watch(showBottomSheetProvider);
     final placeName = ref.watch(placeNameProvider);
@@ -37,15 +36,17 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final sourceLocationName = ref.watch(sourceLocationNameProvider);
     final startNavigation = ref.watch(startNavigationProvider);
     final hasArrived = ref.watch(hasArrivedProvider);
+    final locationPermissionGranted = ref.watch(
+      locationPermissionGrantedProvider,
+    );
 
     return Scaffold(
       body: Stack(
         children: [
           GoogleMap(
             polylines: polylines ?? {},
-     
             markers: markers,
-            myLocationEnabled: true,
+            myLocationEnabled: locationPermissionGranted,
             myLocationButtonEnabled: false,
             compassEnabled: false,
             mapType: mapType,

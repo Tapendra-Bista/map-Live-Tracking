@@ -75,6 +75,10 @@ class CurrentLocationButton extends ConsumerWidget {
                     currentLocation.longitude,
                   );
 
+                  // Mark that location permission is granted
+                  ref.read(locationPermissionGrantedProvider.notifier).state =
+                      true;
+
                   // If directionEnabled, reset source name to 'Your location'
                   if (directionEnabled) {
                     ref.read(sourceLocationNameProvider.notifier).state =
