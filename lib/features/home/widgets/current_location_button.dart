@@ -20,7 +20,6 @@ class CurrentLocationButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isLoading = ref.watch(isLoadingProvider);
-    final currentLocation = ref.watch(currentLocationProvider);
     final directionEnabled = ref.watch(directionEnabledProvider);
 
     return Positioned(
@@ -31,75 +30,76 @@ class CurrentLocationButton extends ConsumerWidget {
         onPressed: isLoading
             ? null
             : () async {
-                ref.read(currentLocationProvider);
-                currentLocation.when(
-                  data: (data) async {
-                    if (kDebugMode) {
-                      print(' current location received...');
-                    }
-                    if (data == null) {
-                      ref.read(isLoadingProvider.notifier).state = false;
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Current location not available'),
-                          ),
-                        );
-                      }
-                      return;
-                    }
-                    try {
-                      final controller = await mapController.future;
-                      await controller.animateCamera(
-                        CameraUpdate.newCameraPosition(
-                          CameraPosition(
-                            target: LatLng(data.latitude, data.longitude),
-                            zoom: 15,
-                          ),
-                        ),
-                      );
-                      ref.read(sourceLocationProvider.notifier).state = LatLng(
-                        data.latitude,
-                        data.longitude,
-                      );
+                ref.read(isLoadingProvider.notifier).state = true;
 
-                      // If directionEnabled, reset source name to 'Your location'
-                      if (directionEnabled) {
-                        ref.read(sourceLocationNameProvider.notifier).state =
-                            'Your location';
+                try {
+                  // Invalidate to force refresh and get new location
+                  ref.invalidate(currentLocationProvider);
 
-                  
+                  // Wait for the new location data
+                  final currentLocation = await ref.read(
+                    currentLocationProvider.future,
+                  );
 
-                        // Trigger route recalculation by refreshing the route provider
-                        final destination = ref.read(
-                          destinationLocationProvider,
-                        );
-                        if (destination != null) {
-                          ref.invalidate(routesProvider);
-                        }
-                      }
-                    } finally {
-                      ref.read(isLoadingProvider.notifier).state = false;
-                    }
-                  },
-                  error: (error, stackTrace) {
+                  if (kDebugMode) {
+                    print('Current location received...');
+                  }
+
+                  if (currentLocation == null) {
                     ref.read(isLoadingProvider.notifier).state = false;
                     if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('Error: $error')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Current location not available'),
+                        ),
+                      );
                     }
-                    if (kDebugMode) {
-                      print('error current location...');
+                    return;
+                  }
+
+                  final controller = await mapController.future;
+                  await controller.animateCamera(
+                    CameraUpdate.newCameraPosition(
+                      CameraPosition(
+                        target: LatLng(
+                          currentLocation.latitude,
+                          currentLocation.longitude,
+                        ),
+                        zoom: 15,
+                      ),
+                    ),
+                  );
+
+                  ref.read(sourceLocationProvider.notifier).state = LatLng(
+                    currentLocation.latitude,
+                    currentLocation.longitude,
+                  );
+
+                  // If directionEnabled, reset source name to 'Your location'
+                  if (directionEnabled) {
+                    ref.read(sourceLocationNameProvider.notifier).state =
+                        'Your location';
+
+                    // Trigger route recalculation by refreshing the route provider
+                    final destination = ref.read(destinationLocationProvider);
+                    if (destination != null) {
+                      ref.invalidate(routesProvider);
                     }
-                  },
-                  loading: () {
-                    if (kDebugMode) {
-                      print('Loading current location...');
-                    }
-                    ref.read(isLoadingProvider.notifier).state = true;
-                  },
-                );
+                  }
+
+                  ref.read(isLoadingProvider.notifier).state = false;
+                } catch (error, stackTrace) {
+                  ref.read(isLoadingProvider.notifier).state = false;
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $error')));
+                  }
+                  if (kDebugMode) {
+                    print('Error getting current location: $error');
+                    print('Stack trace: $stackTrace');
+                  }
+                }
               },
         backgroundColor: Colors.white,
         child: isLoading
